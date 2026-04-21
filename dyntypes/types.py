@@ -13,11 +13,6 @@ class Literal:
     def __class_getitem__(cls, parameter) -> Type:
         return cls(parameter)
 
-    def to_ast(self):
-        return ast.Subscript(
-            value=parse_expr("t.Literal"),
-            slice=ast.Constant(value=self.value),
-        )
 
 
 class Union:

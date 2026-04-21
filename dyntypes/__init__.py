@@ -1,2 +1,2 @@
 from .codegen import Codegen, Function
-from .types import Literal, Union
+from .types import Literal
