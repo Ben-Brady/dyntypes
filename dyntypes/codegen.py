@@ -47,6 +47,11 @@ class Codegen:
     def __init__(self) -> None:
         self._functions = []
 
+    def func(self) -> Function:
+        func = Function()
+        self._functions.append(func)
+        return func
+
     def generate(self):
         paths: dict[str, list[FunctionOverload]] = {}
         for func in self._functions:
@@ -88,11 +93,6 @@ class Codegen:
             _strip_implementation(module)
             stub_path = path.with_suffix(".pyi")
             stub_path.write_text(ast.unparse(module))
-
-    def func(self) -> Function:
-        func = Function()
-        self._functions.append(func)
-        return func
 
 
 def _generate_overload_def(
