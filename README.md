@@ -1,7 +1,6 @@
 # Dyntypes
 
-Dyntypes is a library for generatinging
-
+Create type hints dynamically with ease
 
 ```py
 from dyntypes import Codegen
