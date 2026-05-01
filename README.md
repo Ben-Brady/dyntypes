@@ -66,4 +66,4 @@ def generate_types():
 
 ## Examples
 
-For example implementations, see the examples folder at LINK HEERE
+For example implementations, see the [examples folder](https://github.com/Ben-Brady/dyntypes/tree/main/examples) on GitHub.
