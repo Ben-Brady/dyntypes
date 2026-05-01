@@ -3,21 +3,6 @@ revision = 3
 requires-python = ">=3.13"
 
 [[package]]
-name = "fyp-types"
+name = "dyntypes"
 version = "0.1.0"
 source = { virtual = "." }
-dependencies = [
-    { name = "resulting" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "resulting", specifier = ">=1.3.0" }]
-
-[[package]]
-name = "resulting"
-version = "1.3.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/08/93/137db14b89fc4fae506276c313a1b2e45ce0509ee0b28e88fc9e4f764869/resulting-1.3.0.tar.gz", hash = "sha256:d19bd13234405316d410e1315e520df88f7469aa6dac784cab56718cf07037fa", size = 6425, upload-time = "2024-06-25T14:20:10.513Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/93/7e/597697bc53c93c097dbe3249399f8e73c1ccc84c2a380a22f92f2b346e08/resulting-1.3.0-py3-none-any.whl", hash = "sha256:2cd67ab69b6cc5bdd3dc49e7a407928b74c197d0ebd09330cf1c5e68ccac81a9", size = 6097, upload-time = "2024-06-25T14:19:18.741Z" },
-]

@@ -27,4 +27,4 @@ def generate_types():
 
     query_func.overload(filename=str, return_type=t.Never)
 
-    codegen.generate()
+    codegen.save()

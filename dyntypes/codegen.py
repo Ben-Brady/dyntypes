@@ -22,14 +22,42 @@ class Function:
     overloads: list[FunctionOverloadOptions] = field(default_factory=list)
 
     def bind[T: t.Callable](self, func: T) -> T:
+        """
+        Bind this object to a function
+
+        ## Example
+
+        ```
+        example_func = codegen.func()
+
+        @example_func.bind
+        def example():
+            ...
+        ```
+        """
         self.func_obj = func
         return func
 
     def overload(self, return_type: t.Any | None = None, **kwargs: t.Any):
+        """
+        Bind this object to a function
+
+        Example:
+        ```
+        example_func = codegen.func()
+
+        @example_func.bind
+        def a():
+            ...
+
+        example_func.overload()
+        ```
+        """
         self.overloads.append(
             FunctionOverloadOptions(
                 return_type=value_to_ast(return_type),
-                parameters={key: value_to_ast(value) for key, value in kwargs.items()},
+                parameters={key: value_to_ast(value)
+                            for key, value in kwargs.items()},
             )
         )
 
@@ -48,11 +76,37 @@ class Codegen:
         self._functions = []
 
     def func(self) -> Function:
+        """
+        Creates an object which you can use to bind functions
+
+        ## Example
+
+        ```
+        codegen = Codegen()
+        example_func = codegen.func()
+
+        @example_func.bind
+        def example():
+            ...
+        ```
+        """
         func = Function()
         self._functions.append(func)
         return func
 
-    def generate(self):
+    def save(self):
+        """
+        Generate and creates the type stub files for any types declared
+        using this object.
+
+        ## Example
+
+        ```
+        codegen = Codegen()
+        ...
+        codegen.save()
+        ```
+        """
         paths: dict[str, list[FunctionOverload]] = {}
         for func in self._functions:
             assert func.func_obj

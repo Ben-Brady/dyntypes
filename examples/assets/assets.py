@@ -4,11 +4,11 @@ from pathlib import Path
 import io
 
 codegen = Codegen()
-asset_func = codegen.func()
+open_asset_func = codegen.func()
 ASSET_FOLDER = Path("./files")
 
 
-@asset_func.bind
+@open_asset_func.bind
 def open_asset(filename: str) -> io.BufferedReader | None:
     try:
         return open(ASSET_FOLDER / filename, "rb")
@@ -19,8 +19,8 @@ def open_asset(filename: str) -> io.BufferedReader | None:
 def generate_types():
     files = (file.name for file in ASSET_FOLDER.iterdir())
     for filename in files:
-        asset_func.overload(filename=filename, return_type=int)
+        open_asset_func.overload(filename=filename, return_type=int)
 
-    asset_func.overload(filename=str, return_type=None)
+    open_asset_func.overload(filename=str, return_type=None)
 
-    codegen.generate()
+    codegen.save()
