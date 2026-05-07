@@ -107,30 +107,6 @@ This means that when using this interface, we'll be able to get autocomplete on 
 
 ### Notes
 
-#### Root Level
-
-Dyntypes only supports generating types at the root level of the module, so any function or type alias defined inside a a class will be removed.
-
-```py
-def foo():
-    type Bar = int # ❌: not in module body
-    def bar(): # ❌: not in module body
-        ...
-
-class Foo:
-    def foo(): # ❌: not in module body
-        ...
-
-if True:
-    def foo(): # ❌: not in module body
-        ...
-
-type Bar = int # ️✅: will work correctly
-def bar(): # ️✅: will work correctly
-    ...
-```
-
-While support for type hinting objects inside classes may be added in a future version, conditional or nested functions are not planned.
 
 #### Literal Shorthand
 
@@ -158,3 +134,46 @@ t.Literal[*first_100_numbers]
 ```
 
 If IDE complains about using dynamic values in literals, you can put `# type: ignore` on the same line to suppress them.
+
+### Known Issues
+
+#### Root Level
+
+Dyntypes only supports generating types at the root level of the module, so any function or type alias defined inside a a class will be removed.
+
+```py
+def foo():
+    type Bar = int # ❌: not in module body
+    def bar(): # ❌: not in module body
+        ...
+
+class Foo:
+    def foo(): # ❌: not in module body
+        ...
+
+if True:
+    def foo(): # ❌: not in module body
+        ...
+
+type Bar = int # ️✅: will work correctly
+def bar(): # ️✅: will work correctly
+    ...
+```
+
+While support for type hinting objects inside classes may be added in a future version, conditional or nested functions are not planned.
+
+#### Imported Types
+
+Dyntypes currently doesn't support imported types directly due to limitations with how we convert values into their AST representation
+
+While support for this is planned, it can currently be worked around by defining a type alias.
+
+```py
+
+type MyAlias = t.Any
+
+codegen.set_type_alias(MyAlias, io.BufferedReader)  # ❌: will not work due to import
+
+type BufferedReader = io.BufferedReader
+codegen.set_type_alias(MyAlias, BufferedReader)  # ️✅: current workaround
+```

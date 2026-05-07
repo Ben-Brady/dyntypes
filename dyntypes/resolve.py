@@ -9,6 +9,7 @@ def value_to_ast(value: t.Any, *, typing_import: str) -> ast.expr:
     if getattr(value, "__module__", None) == "typing":
         return astutils.attribute(astutils.name(typing_import), value.__name__)
 
+    # TODO: add support for imported types, i.e. io.Reader
     if isinstance(value, types.UnionType):
         args = t.get_args(value)
         union_values = [value_to_ast(
