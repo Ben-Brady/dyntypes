@@ -1,4 +1,5 @@
 from . import astutils
+from .resolve import value_to_ast
 from .errors import TypegenFailureWarning
 from .typing_import import generate_typing_import
 import warnings
@@ -10,8 +11,8 @@ import ast
 @dataclass
 class OverloadDefinition:
     func: t.Callable
-    parameters: dict[str, ast.expr]
-    return_type: ast.expr
+    parameters: dict[str, t.Any]
+    return_type: t.Any
 
 
 def apply_overloads(module: ast.Module, overloads: list[OverloadDefinition]):
@@ -31,14 +32,21 @@ def apply_overloads(module: ast.Module, overloads: list[OverloadDefinition]):
 
         # We need to reverse order for overloads since
         # when they'll be written in inverse order
-        for overload in reversed(overloads):
+        for overload in overloads:
             overload_def = generate_overload_definition(
                 func_def=func_def,
                 overload=overload,
                 typing_import=typing_import,
             )
-            index = module.body.index(func_def)
-            module.body.insert(index, overload_def)
+            try:
+                index = module.body.index(func_def)
+                module.body.insert(index, overload_def)
+            except ValueError:
+                warnings.warn(
+                    f"Function {func_name} could not be found inside moudle body, overloadd failed to be created",
+                    category=TypegenFailureWarning
+                )
+                continue
 
 
 def generate_overload_definition(
@@ -51,8 +59,16 @@ def generate_overload_definition(
     overload_def.decorator_list = [astutils.typing_overload(typing_import)]
 
     for param, param_type in overload.parameters.items():
-        update_def_parameter(overload_def, param, param_type)
-    overload_def.returns = overload.return_type
+        ast_value = value_to_ast(
+            param_type,
+            typing_import=typing_import
+        )
+        update_def_parameter(overload_def, param, ast_value)
+
+    overload_def.returns = value_to_ast(
+        overload.return_type,
+        typing_import=typing_import
+    )
     return overload_def
 
 

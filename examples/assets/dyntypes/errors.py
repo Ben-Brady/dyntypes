@@ -1,3 +1,0 @@
-
-class TypegenFailureWarning(Warning):
-    pass

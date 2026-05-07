@@ -1,19 +1,26 @@
 from . import astutils
 from .overloads import apply_overloads, OverloadDefinition
-from .alias import TypeAliasDefinition
-from .resolve import value_to_ast
+from .alias import apply_type_aliases, TypeAliasDefinition
+
+from dataclasses import dataclass, field
 import typing as t
 import inspect
 from pathlib import Path
 import ast
 
 
+@dataclass
+class FileModifications:
+    overloads: list[OverloadDefinition] = field(default_factory=list)
+    aliases: list[TypeAliasDefinition] = field(default_factory=list)
+
 class Codegen:
     _overloads: list[OverloadDefinition]
     _aliases: list[TypeAliasDefinition]
 
     def __init__(self) -> None:
-        self._functions = []
+        self._overloads = []
+        self._aliases = []
 
     def overload_func(self, func: t.Callable, *, return_type: t.Any | None = None, **kwargs: t.Any):
         """
@@ -31,11 +38,8 @@ class Codegen:
         """
         overload = OverloadDefinition(
             func=func,
-            parameters={
-                key: value_to_ast(value)
-                for key, value in kwargs.items()
-            },
-            return_type=value_to_ast(return_type)
+            parameters=kwargs,
+            return_type=return_type,
         )
         self._overloads.append(overload)
 
@@ -55,9 +59,9 @@ class Codegen:
         """
         func = TypeAliasDefinition(
             type_alias=type_alias,
-            value=value_to_ast(type),
+            value=type,
         )
-        self._functions.append(func)
+        self._aliases.append(func)
         return func
 
     def save(self):
@@ -73,19 +77,26 @@ class Codegen:
         codegen.save()
         ```
         """
-        paths: dict[str, list[OverloadDefinition]] = {}
-        for func in self._functions:
-            path = inspect.getfile(func.func_obj)
-            paths.setdefault(path, [])
-            paths[path].extend(func.overloads)
 
-        for filepath, overloads in paths.items():
+        files: dict[str, FileModifications] = {}
+        for overload in self._overloads:
+            path = inspect.getfile(overload.func)
+            files.setdefault(path, FileModifications())
+            files[path].overloads.append(overload)
+
+        for alias in self._aliases:
+            path = inspect.getfile(alias.type_alias)
+            files.setdefault(path, FileModifications())
+            files[path].overloads.append(overload)
+
+        for filepath, modifications in files.items():
             path = Path(filepath)
             stub_path = path.with_suffix(".pyi")
             module = ast.parse(path.read_text())
 
             astutils.strip_function_implementations(module)
-            apply_overloads(module, overloads)
+            apply_overloads(module, modifications.overloads)
+            apply_type_aliases(module, modifications.aliases)
 
             stub_src = ast.unparse(module)
             stub_path.write_text(stub_src)

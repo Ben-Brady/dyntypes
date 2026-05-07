@@ -10,10 +10,9 @@ def generate_typing_import(module: ast.Module) -> str:
         import_name = existing_import.asname or existing_import.name
         return import_name
     else:
-        IMPORT_NAME = "typing"
         index = _find_slot_for_import(module)
-        module.body.insert(index, astutils.import_("typing", IMPORT_NAME))
-        return IMPORT_NAME
+        module.body.insert(index, astutils.import_("typing"))
+        return "typing"
 
 
 def _find_slot_for_import(module: ast.Module) -> int:
@@ -22,9 +21,9 @@ def _find_slot_for_import(module: ast.Module) -> int:
     # be the first thing in a file
     for x, node in enumerate(module.body):
         if (isinstance(node, ast.ImportFrom) and
-                len(node.names) == 1 and
-                node.names[0].name == "__future__"
-            ):
+                    len(node.names) == 1 and
+                    node.names[0].name == "__future__"
+                ):
             continue
 
         return x

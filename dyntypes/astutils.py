@@ -1,8 +1,6 @@
 import ast
 import typing as t
 
-TYPING_IMPORT = "t"
-
 
 TNode = t.TypeVar("TNode", bound=ast.stmt)
 
@@ -96,4 +94,3 @@ def strip_function_implementations(module: ast.Module):
     for node in ast.walk(module):
         if isinstance(node, ast.FunctionDef):
             node.body = [parse_stmt("...")]
-
