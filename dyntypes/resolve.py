@@ -45,7 +45,6 @@ type LiteralType = int | str | bytes | bool | None
 
 
 def is_literal_value(value: t.Any) -> t.TypeGuard[LiteralType]:
-    # TODO: Lacks support Enum variants
     return isinstance(value, (int, str, bytes, bool)) or value is None
 
 

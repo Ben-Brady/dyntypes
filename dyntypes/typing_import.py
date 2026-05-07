@@ -5,7 +5,6 @@ from . import astutils
 def generate_typing_import(module: ast.Module) -> str:
     existing_import = _find_existing_typing_import(module)
 
-    # TODO: Ensure it's an unsued name
     if existing_import:
         import_name = existing_import.asname or existing_import.name
         return import_name
