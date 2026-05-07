@@ -177,3 +177,11 @@ codegen.set_type_alias(MyAlias, io.BufferedReader)  # ❌: will not work due to 
 type BufferedReader = io.BufferedReader
 codegen.set_type_alias(MyAlias, BufferedReader)  # ️✅: current workaround
 ```
+
+#### Function Overloads with the argument `return_type`
+
+Due to the way overload_func is defined, you can't overload an argument named return_type.
+
+This is a deliberate limitation to make using the API easier for the majority cases.
+
+Support may be added for this use case if an actual use case is found.
