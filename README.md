@@ -1,69 +1,160 @@
 # Dyntypes
 
-Create type hints dynamically with ease
+Dyntypes is a library that lets you create types based on runtime values, allowing you to create more API patterns that were previously impossible.
+
+## How it Works
+
+Python lets you create `.pyi` type stub files. These are like regular python files, except they're only used by type checkers to see what types a file has. They override the original type definitions whilst not affecting the runtime. They're intended for use in C extensions where features such as docstrings are inaccessible, however they can be used to replace the types of an existing Python file.
+
+## Usage Example
 
 ```py
-from dyntypes import Codegen
-import typing as t
+import typing
+
+type AssetFilename = str
+
+ASSET_FOLDER = Path("./assets")
+def load_asset(name: AssetFilename) -> str:
+    with open(f"{ASSET_FOLDER}/filename") as f:
+        return f.read()
+
+def generate_types():
+    codegen = Codegen()
+    asset_names = [file.name for file in ASSET_FOLDER.iterdir()]
+    codegen.set_type_alias(AssetName, typing.Literal[*asset_names]) # redefine the alias with a literal of all the file names
+    codegen.save() # This writes the type stub files to disk
+```
+
+For examples see the [examples folder](https://github.com/Ben-Brady/dyntypes/tree/main/examples) on GitHub.
+
+## Documentation
+
+### `Codegen()`
+
+The main core of the library is the `Codegen` object. This holds the references to all the types you've defined and lets you save them with `.save()`.
+
+### Aliases
+
+Dyntypes supports redefining type aliases in stubs.
+
+This lets create a loosely types alias, and then narrow it in the type stub.c
+
+When redefining type alises you want the base alias to
+
+#### Alias Example
+
+```py
+import typing
+type AssetFilename = str
+
+ASSET_FOLDER = Path("./assets")
+def load_asset(name: AssetFilename) -> str:
+    with open(f"{ASSET_FOLDER}/filename") as f:
+        return f.read()
 
 codegen = Codegen()
 
-query_func = codegen.func()
-@query_func.bind
-def query(statement: str, args: tuple) -> tuple: ...
-
-def generate_types():
-    query_func.overload(
-        filename="SELECT * FROM posts WHERE ID = ",
-        args=tuple[int],
-        return_type=list[str | int],
-    )
-    query_func.overload(filename=str, return_type=t.Never)
-    codegen.save()
-
-if __name__ == "__main__":
-    generate_types()
+asset_names = [file.name for file in ASSET_FOLDER.iterdir()]
+codegen.set_type_alias(AssetName, typing.Literal[*asset_names])
 ```
 
-## What are Type Stubs?
+In this example, we're create a type alias that will store all the valid asset IDs held in a folder.
 
-Type stubs are a way of adding type hints to files in python, intended for C extensions.
+We define it as the loosest possible type, a string. Then we redefine it in the type stubs as a literal of all the files in that folder.
 
-However, there is nothing stopping code from using this to annotate dynamic types on files.
+This means that when using this interface, we'll be able to get autocomplete on what is and isn't a valid filename
 
-## Quickstart Guide
+### Function Overloads
 
-Create a codegen object, this stores all the type information you'll bind to functions
+Dyntypes creating overloads for functions for specific use cases.
+
+
+The order of overloads is also important, they will be checked first to last.
 
 ```py
-from dyntypes import Codegen
+codegen.overload_func(get_user, id="admin", return_type=User)
+codegen.overload_func(get_user, id=str, return_type=None)
+```
+
+In this example: we're saying that if the ID is admin it's valid, but any other string should return None.
+
+If we defined this the other way round, the string would be checked first and it would indicate that every string should return None.
+
+#### Overload Example
+
+```py
+import typing
+
+type AssetFilename = str
+
+ASSET_FOLDER = Path("./assets")
+def load_asset(name: AssetFilename) -> str:
+    with open(f"{ASSET_FOLDER}/filename") as f:
+        return f.read()
 
 codegen = Codegen()
+
+asset_names = [file.name for file in ASSET_FOLDER.iterdir()]
+codegen.set_type_alias(AssetName, typing.Literal[*asset_names])
 ```
 
-Create a function type object
+
+In this example, we're create a type alias that will store all the valid asset IDs held in a folder.
+
+We define it as the loosest possible type, a string. Then we redefine it in the type stubs as a literal of all the files in that folder.
+
+This means that when using this interface, we'll be able to get autocomplete on what is and isn't a valid filename/
+
+### Notes
+
+#### Root Level
+
+Dyntypes only supports generating types at the root level of the module, so any function or type alias defined inside a a class will be removed.
 
 ```py
-example_func = codegen.func()
-@example_func.bind
-def example(bar: str) -> int | None: ...
+def foo():
+    type Bar = int # ❌: not in module body
+    def bar(): # ❌: not in module body
+        ...
+
+class Foo:
+    def foo(): # ❌: not in module body
+        ...
+
+if True:
+    def foo(): # ❌: not in module body
+        ...
+
+type Bar = int # ️✅: will work correctly
+def bar(): # ️✅: will work correctly
+    ...
 ```
 
-Next we apply overloads to this function, we use the function binding to do this.
+While support for type hinting objects inside classes may be added in a future version, conditional or nested functions are not planned.
 
-I recommend creating a seperate function for type generation so that it can be run conditionally.
+#### Literal Shorthand
+
+As a shorthand, any value type such as string or int will automatically be converted into a Literal, so the following two lines are equivelent.
 
 ```py
-def generate_types():
-    query_func.overload(
-        filename="SELECT * FROM posts WHERE ID = ",
-        args=tuple[int],
-        return_type=list[str | int],
-    )
-    query_func.overload(filename=str, return_type=t.Never)
-    codegen.generate() # Writes out the type stub files
+codegen.overload_func(get_version, return_type=typing.Literal["1.0.0"])
+codegen.overload_func(get_version, return_type="1.0.0")
 ```
 
-## Examples
+This is performed for: `int`, `str`, `bytes`, `bool` and `None`.
 
-For example implementations, see the [examples folder](https://github.com/Ben-Brady/dyntypes/tree/main/examples) on GitHub.
+#### Built-in types
+
+Most built-in types support using dynamic values in more ways than you'd expect
+
+```py
+union_values = []
+union_values.append(str)
+union_values.append(int)
+t.Union[*types]
+
+first_100_numbers =  list(range(100))
+t.Literal[*first_100_numbers]
+```
+
+If IDE complains about using dynamic values in literals, you can put `# type: ignore` on the same line to suppress them.

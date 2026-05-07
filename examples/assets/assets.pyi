@@ -1,30 +1,27 @@
-import typing as t
+import typing
 from dyntypes import Codegen
-import typing as t
 from pathlib import Path
 import io
-codegen = Codegen()
-asset_func = codegen.func()
 ASSET_FOLDER = Path('./files')
+type Reader = io.BufferedReader
 
-@t.overload
-def open_asset(filename: t.Literal['c.txt']) -> int:
+@typing.overload
+def open_asset(filename: typing.Literal['a.txt']) -> Reader:
     ...
 
-@t.overload
-def open_asset(filename: t.Literal['a.txt']) -> int:
+@typing.overload
+def open_asset(filename: typing.Literal['b.txt']) -> Reader:
     ...
 
-@t.overload
-def open_asset(filename: t.Literal['b.txt']) -> int:
+@typing.overload
+def open_asset(filename: typing.Literal['c.txt']) -> Reader:
     ...
 
-@t.overload
-def open_asset(filename: str) -> t.Literal[None]:
+@typing.overload
+def open_asset(filename: str) -> typing.Literal[None]:
     ...
 
-@asset_func.bind
-def open_asset(filename: str) -> io.BufferedReader | None:
+def open_asset(filename: str) -> Reader | None:
     ...
 
 def generate_types():

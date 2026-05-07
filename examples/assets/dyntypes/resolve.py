@@ -4,35 +4,39 @@ import ast
 import typing as t
 import types
 
-TYPING_IMPORT = "t"
 
-
-def value_to_ast(value: t.Any) -> ast.expr:
+def value_to_ast(value: t.Any, *, typing_import: str) -> ast.expr:
     if getattr(value, "__module__", None) == "typing":
-        return astutils.attribute(astutils.name(TYPING_IMPORT), value.__name__)
+        return astutils.attribute(astutils.name(typing_import), value.__name__)
 
     if isinstance(value, types.UnionType):
         args = t.get_args(value)
-        union_values = [value_to_ast(v) for v in args]
+        union_values = [value_to_ast(
+            v, typing_import=typing_import) for v in args]
         return astutils.union(union_values)
 
     if type(value) is types.GenericAlias:
         if value.__qualname__ == "tuple":
             args = t.get_args(value)
-            obj = astutils.tuple_generic([value_to_ast(v) for v in args])
+            obj = astutils.tuple_generic(
+                [value_to_ast(v, typing_import=typing_import) for v in args])
             return obj
+
+    if isinstance(value, t.TypeAliasType):
+        return astutils.name(value.__name__)
 
     if is_literal_type(value):
         args = t.cast(tuple[str], t.get_args(value))
-        return astutils.literal(args)
+        return astutils.literal(args, typing_import=typing_import)
 
     if isinstance(value, type) and is_builtin(value):
         return astutils.name(value.__name__)
 
     if is_literal_value(value):
-        return astutils.literal([value])
+        return astutils.literal([value], typing_import=typing_import)
 
-    raise ValueError(f"{value} ({type(value)}) is not supported")
+    raise ValueError(
+        f"generating types with type {type(value)} is not supported")
 
 
 # https://typing.python.org/en/latest/spec/literal.html#legal-parameters-for-literal-at-type-check-time
