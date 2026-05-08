@@ -6,9 +6,15 @@ import types
 
 
 def value_to_ast(value: t.Any, *, typing_import: str) -> ast.expr:
-    if getattr(value, "__module__", None) == "typing":
-        return astutils.attribute(astutils.name(typing_import), value.__name__)
+    # int, str, bool
+    if isinstance(value, type) and is_builtin(value):
+        return astutils.name(value.__name__)
 
+    # "a", 1
+    if is_literal_value(value):
+        return astutils.literal([value], typing_import=typing_import)
+
+    # 1 | 2 | 3
     # TODO: add support for imported types, i.e. io.Reader
     if isinstance(value, types.UnionType):
         args = t.get_args(value)
@@ -16,25 +22,25 @@ def value_to_ast(value: t.Any, *, typing_import: str) -> ast.expr:
             v, typing_import=typing_import) for v in args]
         return astutils.union(union_values)
 
-    if type(value) is types.GenericAlias:
-        if value.__qualname__ == "tuple":
-            args = t.get_args(value)
-            obj = astutils.tuple_generic(
-                [value_to_ast(v, typing_import=typing_import) for v in args])
-            return obj
+    # tuple[int, str, foo]
+    if type(value) is types.GenericAlias and value.__qualname__ == "tuple":
+        args = t.get_args(value)
+        obj = astutils.tuple_generic(
+            [value_to_ast(v, typing_import=typing_import) for v in args])
+        return obj
 
+    # type Foo = int
     if isinstance(value, t.TypeAliasType):
         return astutils.name(value.__name__)
 
+    # Literal["a", "b"]
     if is_literal_type(value):
         args = t.cast(tuple[str], t.get_args(value))
         return astutils.literal(args, typing_import=typing_import)
 
-    if isinstance(value, type) and is_builtin(value):
-        return astutils.name(value.__name__)
-
-    if is_literal_value(value):
-        return astutils.literal([value], typing_import=typing_import)
+    # typing.*
+    if getattr(value, "__module__", None) == "typing":
+        return astutils.attribute(astutils.name(typing_import), value.__name__)
 
     raise ValueError(
         f"generating types with type {type(value)} is not supported")

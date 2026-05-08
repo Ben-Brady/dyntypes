@@ -1,6 +1,9 @@
 from . import astutils
 from .overloads import apply_overloads, OverloadDefinition
 from .alias import apply_type_aliases, TypeAliasDefinition
+from .errors import TypegenFailureWarning
+
+import warnings
 
 from dataclasses import dataclass, field
 import typing as t
@@ -13,6 +16,7 @@ import ast
 class FileModifications:
     overloads: list[OverloadDefinition] = field(default_factory=list)
     aliases: list[TypeAliasDefinition] = field(default_factory=list)
+
 
 class Codegen:
     _overloads: list[OverloadDefinition]
@@ -85,9 +89,17 @@ class Codegen:
             files[path].overloads.append(overload)
 
         for alias in self._aliases:
-            path = inspect.getfile(alias.type_alias)
-            files.setdefault(path, FileModifications())
-            files[path].overloads.append(overload)
+            module = inspect.getmodule(alias.type_alias)
+            path = getattr(module, "__file__", None)
+            if not path:
+                warnings.warn(
+                    f"Could not find source file for {alias.type_alias}",
+                    category=TypegenFailureWarning
+                )
+            else:
+                path = str(path)
+                files.setdefault(path, FileModifications())
+                files[path].aliases.append(alias)
 
         for filepath, modifications in files.items():
             path = Path(filepath)

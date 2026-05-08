@@ -31,8 +31,8 @@ def apply_type_aliases(module: ast.Module, aliases: list[TypeAliasDefinition]):
 def find_type_alias_by_name(module: ast.Module, name: str) -> ast.TypeAlias | None:
     aliases: list[ast.TypeAlias] = []
     for node in ast.walk(module):
-        if isinstance(node, ast.TypeAlias) and node.name == name:
-            aliases.append(node)
+        if isinstance(node, ast.TypeAlias) and node.name.id == name:
+                aliases.append(node)
 
     if len(aliases) == 0:
         msg = f"Could not find type alias '{name}', unable to create definition"
