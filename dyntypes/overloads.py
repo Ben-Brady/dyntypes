@@ -8,6 +8,10 @@ from dataclasses import dataclass
 import ast
 
 
+class InitialType:
+    pass
+
+
 @dataclass
 class OverloadDefinition:
     func: t.Callable
@@ -65,10 +69,12 @@ def generate_overload_definition(
         )
         update_def_parameter(overload_def, param, ast_value)
 
-    overload_def.returns = value_to_ast(
-        overload.return_type,
-        typing_import=typing_import
-    )
+    if not isinstance(overload.return_type, InitialType):
+        overload_def.returns = value_to_ast(
+            overload.return_type,
+            typing_import=typing_import
+        )
+
     return overload_def
 
 

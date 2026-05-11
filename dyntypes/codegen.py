@@ -1,5 +1,5 @@
 from . import astutils
-from .overloads import apply_overloads, OverloadDefinition
+from .overloads import apply_overloads, OverloadDefinition, InitialType
 from .alias import apply_type_aliases, TypeAliasDefinition
 from .errors import TypegenFailureWarning
 
@@ -7,6 +7,7 @@ import warnings
 
 from dataclasses import dataclass, field
 import typing as t
+import types
 import inspect
 from pathlib import Path
 import ast
@@ -26,9 +27,11 @@ class Codegen:
         self._overloads = []
         self._aliases = []
 
-    def overload_func(self, func: t.Callable, *, return_type: t.Any | None = None, **kwargs: t.Any):
+    def overload_func(self, func: t.Callable, *, return_type: t.Any = InitialType(), **kwargs: t.Any):
         """
-        Attaches a function overload to the specified function
+        Attaches a function overload to the specified function.
+
+        Leaving a parameter or return type unspecified will use the original value.
 
         ## Example
 
@@ -38,6 +41,7 @@ class Codegen:
 
         codegen = Codegen()
         codegen.overload_func(find_user_id, name="admin", return_type=int)
+        codegen.overload_func(find_user_id, name=str, return_type=None)
         ```
         """
         overload = OverloadDefinition(
