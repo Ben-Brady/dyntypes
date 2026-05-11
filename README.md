@@ -10,6 +10,8 @@ Python lets you create `.pyi` type stub files. These are like regular python fil
 
 ```py
 import typing
+from pathlib import Path
+from dyntypes import Codegen
 
 type AssetFilename = str
 
@@ -21,7 +23,7 @@ def load_asset(name: AssetFilename) -> str:
 def generate_types():
     codegen = Codegen()
     asset_names = [file.name for file in ASSET_FOLDER.iterdir()]
-    codegen.set_type_alias(AssetName, typing.Literal[*asset_names]) # redefine the alias with a literal of all the file names
+    codegen.set_type_alias(AssetFilename, typing.Literal[*asset_names]) # redefine the alias with a literal of all the file names
     codegen.save() # This writes the type stub files to disk
 ```
 
