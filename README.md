@@ -107,7 +107,6 @@ This means that when using this interface, we'll be able to get autocomplete on 
 
 ### Notes
 
-
 #### Literal Shorthand
 
 As a shorthand, any value type such as string or int will automatically be converted into a Literal, so the following two lines are equivelent.
@@ -119,21 +118,21 @@ codegen.overload_func(get_version, return_type="1.0.0")
 
 This is performed for: `int`, `str`, `bytes`, `bool` and `None`.
 
-#### Built-in types
+#### `Literal` and `Union`
 
-Most built-in types support using dynamic values in more ways than you'd expect
+In order to dynamically support using `Literal` and `Union` types, dyntype has some helpers to do that. This is because IDEs through a warning if you try and use them directly. Although this can be removed with a `# type: ignore`, we do that for you to prevent errors in your own code.
 
 ```py
 union_values = []
 union_values.append(str)
 union_values.append(int)
-t.Union[*types]
+dyntypes.Union(union_values)
+# equivelent to t.Union[*union_values]
 
 first_100_numbers =  list(range(100))
-t.Literal[*first_100_numbers]
+dyntypes.Literal(first_100_numbers)
+# equivelent to t.Literal[*first_100_numbers]
 ```
-
-If IDE complains about using dynamic values in literals, you can put `# type: ignore` on the same line to suppress them.
 
 ### Known Issues
 
@@ -164,9 +163,9 @@ While support for type hinting objects inside classes may be added in a future v
 
 #### Imported Types
 
-Dyntypes currently doesn't support imported types directly due to limitations with how we convert values into their AST representation
+Dyntypes currently doesn't support imported types directly due to limitations with how we convert values into their AST representation.
 
-While support for this is planned, it can currently be worked around by defining a type alias.
+While support for this is planned, it can currently be worked around by defining a type alias:
 
 ```py
 
