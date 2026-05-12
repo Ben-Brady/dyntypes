@@ -11,7 +11,7 @@ Python lets you create `.pyi` type stub files. These are like regular python fil
 ```py
 import typing
 from pathlib import Path
-from dyntypes import Codegen
+from dyntypes import Codegen, Literal
 
 type AssetFilename = str
 
@@ -23,7 +23,7 @@ def load_asset(name: AssetFilename) -> str:
 def generate_types():
     codegen = Codegen()
     asset_names = [file.name for file in ASSET_FOLDER.iterdir()]
-    codegen.set_type_alias(AssetFilename, typing.Literal[*asset_names]) # redefine the alias with a literal of all the file names
+    codegen.set_type_alias(AssetFilename, Literal(asset_names)) # redefine the alias with a literal of all the file names
     codegen.save() # This writes the type stub files to disk
 ```
 
@@ -47,9 +47,11 @@ When redefining type alises you want the base alias to
 
 ```py
 import typing
+from pathlib import Path
+from dyntypes import Codegen, Literal
 type AssetFilename = str
 
-ASSET_FOLDER = Path("./assets")
+ASSET_FOLDER = Path("./dyntypes")
 def load_asset(name: AssetFilename) -> str:
     with open(f"{ASSET_FOLDER}/filename") as f:
         return f.read()
@@ -57,7 +59,7 @@ def load_asset(name: AssetFilename) -> str:
 codegen = Codegen()
 
 asset_names = [file.name for file in ASSET_FOLDER.iterdir()]
-codegen.set_type_alias(AssetName, typing.Literal[*asset_names])
+codegen.set_type_alias(AssetFilename, Literal(asset_names))
 ```
 
 In this example, we're create a type alias that will store all the valid asset IDs held in a folder.
@@ -120,7 +122,7 @@ codegen.overload_func(get_version, return_type="1.0.0")
 
 This is performed for: `int`, `str`, `bytes`, `bool` and `None`.
 
-#### `Literal` and `Union`
+#### Utlity Types: `Literal` and `Union`
 
 In order to dynamically support using `Literal` and `Union` types, dyntype has some helpers to do that. This is because IDEs through a warning if you try and use them directly. Although this can be removed with a `# type: ignore`, we do that for you to prevent errors in your own code.
 
