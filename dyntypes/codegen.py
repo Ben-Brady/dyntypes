@@ -86,19 +86,13 @@ class Codegen:
         codegen.save()
         ```
         """
-        files = self._generate_modifications()
+        stubs = self._generate_stubs()
 
-        for filepath, modifications in files.items():
-            module = astutils.read_ast(filepath)
-
-            astutils.strip_function_implementations(module)
-            apply_overloads(module, modifications.overloads)
-            apply_type_aliases(module, modifications.aliases)
-
-            stub_path = generate_stub_path(filepath)
+        for stub_path, module in stubs.items():
             astutils.write_ast(stub_path, module)
 
-    def _generate_modifications(self) -> dict[str, FileModifications]:
+    # Split off into a seperate file for testing
+    def _generate_stubs(self) -> dict[Path, ast.Module]:
         files: dict[str, FileModifications] = {}
         for overload in self._overloads:
             path = get_obj_file(overload.func)
@@ -122,9 +116,19 @@ class Codegen:
                 files.setdefault(path, FileModifications())
                 files[path].aliases.append(alias)
 
-        return files
+        outputs: dict[Path, ast.Module] = {}
+        for filepath, modifications in files.items():
+            module = astutils.read_ast(filepath)
+
+            astutils.strip_function_implementations(module)
+            apply_overloads(module, modifications.overloads)
+            apply_type_aliases(module, modifications.aliases)
+
+            stub_path = generate_stub_path(filepath)
+            outputs[stub_path] = module
+
+        return outputs
 
 
 def generate_stub_path(filepath: str) -> Path:
     return Path(filepath).with_suffix(".pyi")
-

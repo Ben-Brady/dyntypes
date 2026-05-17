@@ -1,4 +1,5 @@
 from . import astutils
+import inspect
 import builtins
 import ast
 import typing as t
@@ -10,6 +11,9 @@ def value_to_ast(value: t.Any, *, typing_import: str) -> ast.expr:
     # int, str, bool
     if isinstance(value, type) and is_builtin_type(value):
         return astutils.name(value.__name__)
+
+    if value is None:
+        return astutils.name("None")
 
     # "a", 1
     if is_literal_value(value):
