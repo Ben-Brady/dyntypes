@@ -1,5 +1,5 @@
 from . import astutils
-from .resolve import value_to_ast
+from .resolve import value_to_ast_type
 from .errors import TypegenFailureWarning
 from .typing_import import generate_typing_import
 import warnings
@@ -63,14 +63,14 @@ def generate_overload_definition(
     overload_def.decorator_list = [astutils.typing_overload(typing_import)]
 
     for param, param_type in overload.parameters.items():
-        ast_value = value_to_ast(
+        ast_value = value_to_ast_type(
             param_type,
             typing_import=typing_import
         )
         update_def_parameter(overload_def, param, ast_value)
 
     if not isinstance(overload.return_type, InitialType):
-        overload_def.returns = value_to_ast(
+        overload_def.returns = value_to_ast_type(
             overload.return_type,
             typing_import=typing_import
         )

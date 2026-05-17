@@ -7,7 +7,7 @@ import types
 import re
 
 
-def value_to_ast(value: t.Any, *, typing_import: str) -> ast.expr:
+def value_to_ast_type(value: t.Any, *, typing_import: str) -> ast.expr:
     # int, str, bool
     if isinstance(value, type) and is_builtin_type(value):
         return astutils.name(value.__name__)
@@ -23,7 +23,7 @@ def value_to_ast(value: t.Any, *, typing_import: str) -> ast.expr:
     # TODO: add support for imported types, i.e. io.Reader
     if isinstance(value, types.UnionType):
         args = t.get_args(value)
-        union_values = [value_to_ast(
+        union_values = [value_to_ast_type(
             v, typing_import=typing_import) for v in args]
         return astutils.union(union_values)
 
@@ -31,7 +31,7 @@ def value_to_ast(value: t.Any, *, typing_import: str) -> ast.expr:
     if type(value) is types.GenericAlias and value.__qualname__ == "tuple":
         args = t.get_args(value)
         obj = astutils.tuple_generic(
-            [value_to_ast(v, typing_import=typing_import) for v in args])
+            [value_to_ast_type(v, typing_import=typing_import) for v in args])
         return obj
 
     # type Foo = int
