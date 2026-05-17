@@ -2,6 +2,7 @@ from . import astutils
 from .overloads import apply_overloads, OverloadDefinition, InitialType
 from .alias import apply_type_aliases, TypeAliasDefinition
 from .errors import TypegenFailureWarning
+from .resolve import get_obj_file
 
 import warnings
 
@@ -85,34 +86,45 @@ class Codegen:
         codegen.save()
         ```
         """
+        files = self._generate_modifications()
 
+        for filepath, modifications in files.items():
+            module = astutils.read_ast(filepath)
+
+            astutils.strip_function_implementations(module)
+            apply_overloads(module, modifications.overloads)
+            apply_type_aliases(module, modifications.aliases)
+
+            stub_path = generate_stub_path(filepath)
+            astutils.write_ast(stub_path, module)
+
+    def _generate_modifications(self) -> dict[str, FileModifications]:
         files: dict[str, FileModifications] = {}
         for overload in self._overloads:
-            path = inspect.getfile(overload.func)
-            files.setdefault(path, FileModifications())
-            files[path].overloads.append(overload)
+            path = get_obj_file(overload.func)
+            if not path:
+                warnings.warn(
+                    f"Could not find source file for {overload.func}",
+                    category=TypegenFailureWarning
+                )
+            else:
+                files.setdefault(path, FileModifications())
+                files[path].overloads.append(overload)
 
         for alias in self._aliases:
-            module = inspect.getmodule(alias.type_alias)
-            path = getattr(module, "__file__", None)
+            path = get_obj_file(alias.type_alias)
             if not path:
                 warnings.warn(
                     f"Could not find source file for {alias.type_alias}",
                     category=TypegenFailureWarning
                 )
             else:
-                path = str(path)
                 files.setdefault(path, FileModifications())
                 files[path].aliases.append(alias)
 
-        for filepath, modifications in files.items():
-            path = Path(filepath)
-            stub_path = path.with_suffix(".pyi")
-            module = ast.parse(path.read_text())
+        return files
 
-            astutils.strip_function_implementations(module)
-            apply_overloads(module, modifications.overloads)
-            apply_type_aliases(module, modifications.aliases)
 
-            stub_src = ast.unparse(module)
-            stub_path.write_text(stub_src)
+def generate_stub_path(filepath: str) -> Path:
+    return Path(filepath).with_suffix(".pyi")
+

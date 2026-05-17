@@ -1,8 +1,21 @@
 import ast
 import typing as t
+from pathlib import Path
 
 
 TNode = t.TypeVar("TNode", bound=ast.stmt)
+
+
+def read_ast(filepath: str) -> ast.Module:
+    path = Path(filepath)
+    src = path.read_text()
+    return ast.parse(src)
+
+
+def write_ast(filepath: str | Path, module: ast.Module):
+    path = Path(filepath)
+    src = ast.unparse(module)
+    path.write_text(src)
 
 
 def clone_node(node: TNode) -> TNode:

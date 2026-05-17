@@ -3,11 +3,12 @@ import builtins
 import ast
 import typing as t
 import types
+import re
 
 
 def value_to_ast(value: t.Any, *, typing_import: str) -> ast.expr:
     # int, str, bool
-    if isinstance(value, type) and is_builtin(value):
+    if isinstance(value, type) and is_builtin_type(value):
         return astutils.name(value.__name__)
 
     # "a", 1
@@ -52,23 +53,37 @@ type LiteralType = int | str | bytes | bool | None
 
 
 def is_literal_value(value: t.Any) -> t.TypeGuard[LiteralType]:
-    return isinstance(value, (int, str, bytes, bool)) or value is None
+    WHITELIST = (int, str, bytes, bool)
+
+    # We check the type directly to prevent invalid subclasses
+    if type(value) in WHITELIST:
+        return True
+
+    if value is None:
+        return True
+
+    return False
 
 
 def is_literal_type(value: t.Any) -> bool:
     return getattr(value, "__name__", None) == "Literal"
 
 
-def is_builtin(value: type):
+def is_builtin_type(obj_type: type):
     try:
-        if value.__module__ == "builtins":
+        name = obj_type.__name__
+
+        if obj_type.__module__ == "builtins":
             return True
 
-        # Note this should be redundant
-        # but is useful for things re-exported in builtins
-        if value.__name__ in dir(builtins):
+        # Check things re-exported in builtins
+        if name in dir(builtins):
             return True
     except AttributeError:
+        return False
+
+    # Prevent evaling malicious code
+    if not is_ident(name):
         return False
 
     # Fallback for special cases
@@ -78,3 +93,25 @@ def is_builtin(value: type):
         return False
     else:
         return True
+
+
+IDENT_REGEX = re.compile(r"[0-9A-Za-z_]+",)
+
+
+def is_ident(name: str) -> bool:
+    return bool(IDENT_REGEX.match(name))
+
+
+def get_obj_file(obj: t.Any) -> str | None:
+    try:
+        if isinstance(obj, types.FunctionType):
+            return inspect.getfile(obj)
+
+        module = inspect.getmodule(obj)
+        if not module:
+            return None
+        else:
+            return module.__file__
+
+    except Exception:
+        return None

@@ -172,7 +172,7 @@ While support for this is planned, it can currently be worked around by defining
 ```py
 
 type MyAlias = t.Any
-
+z
 codegen.set_type_alias(MyAlias, io.BufferedReader)  # ❌: will not work due to import
 
 type BufferedReader = io.BufferedReader
