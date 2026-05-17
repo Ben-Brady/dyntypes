@@ -11,7 +11,7 @@ Python lets you create `.pyi` type stub files. These are like regular python fil
 ```py
 import typing
 from pathlib import Path
-from dyntypes import Codegen
+from dyntypes import Codegen, Literal
 
 type AssetFilename = str
 
@@ -23,8 +23,11 @@ def load_asset(name: AssetFilename) -> str:
 def generate_types():
     codegen = Codegen()
     asset_names = [file.name for file in ASSET_FOLDER.iterdir()]
-    codegen.set_type_alias(AssetFilename, typing.Literal[*asset_names]) # redefine the alias with a literal of all the file names
+    codegen.set_type_alias(AssetFilename, Literal(asset_names)) # redefine the alias with a literal of all the file names
     codegen.save() # This writes the type stub files to disk
+
+if __name__ == "__main__":
+    generate_types()
 ```
 
 For examples see the [examples folder](https://github.com/Ben-Brady/dyntypes/tree/main/examples) on GitHub.
@@ -47,17 +50,24 @@ When redefining type alises you want the base alias to
 
 ```py
 import typing
-type AssetFilename = str
+from pathlib import Path
+from dyntypes import Codegen, Literal
 
-ASSET_FOLDER = Path("./assets")
+type AssetFilename = str
+ASSET_FOLDER = Path("./dyntypes")
+
 def load_asset(name: AssetFilename) -> str:
     with open(f"{ASSET_FOLDER}/filename") as f:
         return f.read()
 
-codegen = Codegen()
+def generate_types():
+    codegen = Codegen()
 
-asset_names = [file.name for file in ASSET_FOLDER.iterdir()]
-codegen.set_type_alias(AssetName, typing.Literal[*asset_names])
+    asset_names = [file.name for file in ASSET_FOLDER.iterdir()]
+    codegen.set_type_alias(AssetFilename, Literal(asset_names))
+
+if __name__ == "__main__":
+    generate_types()
 ```
 
 In this example, we're create a type alias that will store all the valid asset IDs held in a folder.
@@ -86,18 +96,26 @@ If we defined this the other way round, the string would be checked first and it
 
 ```py
 import typing
+from pathlib import Path
+from dyntypes import Codegen, Literal
 
 type AssetFilename = str
-
 ASSET_FOLDER = Path("./assets")
+
+
 def load_asset(name: AssetFilename) -> str:
     with open(f"{ASSET_FOLDER}/filename") as f:
         return f.read()
 
-codegen = Codegen()
+def generate_types():
+    codegen = Codegen()
+    for file in ASSET_FOLDER.iterdir():
+        codegen.overload_func(load_asset, name=Literal(file.name))
 
-asset_names = [file.name for file in ASSET_FOLDER.iterdir()]
-codegen.set_type_alias(AssetName, typing.Literal[*asset_names])
+    codegen.overload_func(load_asset, name=str, return_type=typing.Never)
+
+if __name__ == "__main__":
+    generate_types()
 ```
 
 
@@ -120,7 +138,7 @@ codegen.overload_func(get_version, return_type="1.0.0")
 
 This is performed for: `int`, `str`, `bytes`, `bool` and `None`.
 
-#### `Literal` and `Union`
+#### Utlity Types: `Literal` and `Union`
 
 In order to dynamically support using `Literal` and `Union` types, dyntype has some helpers to do that. This is because IDEs through a warning if you try and use them directly. Although this can be removed with a `# type: ignore`, we do that for you to prevent errors in your own code.
 
@@ -137,6 +155,10 @@ dyntypes.Literal(first_100_numbers)
 ```
 
 ### Known Issues
+
+#### Import Only
+
+Because of the way that type stubs work, they only are used when importing a file. They cannot be used for generating types in the same file they're used in.
 
 #### Root Level
 
